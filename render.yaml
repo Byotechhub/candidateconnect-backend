@@ -5,13 +5,5 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
     envVars:
-      - key: DB_HOST
-        value: db-dpg-d88pb5u7r5hc73cn5tjg-a
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_NAME
-        value: postgres
-      - key: DB_USER
-        value: postgres
-      - key: DB_PASSWORD
-        value: postgres
+      - key: DATABASE_URL
+        value: postgresql://candidateconnect_user:8IDjea9v12HdP8oM1QR71JLOlrVHRhjT@dpg-d88pb5u7r5hc73cn5tjg-a.oregon-postgres.render.com/candidateconnect

@@ -11,12 +11,19 @@ from psycopg2 import pool
 
 app = FastAPI()
 
-# Database connection pool
-DB_HOST = "db-dpg-d88pb5u7r5hc73cn5tjg-a"
-DB_PORT = "5432"
-DB_NAME = "postgres"
-DB_USER = "postgres"
-DB_PASSWORD = "postgres"
+# Database connection - use external connection for production
+import os
+
+DB_URL = os.environ.get("DATABASE_URL", "postgresql://candidateconnect_user:8IDjea9v12HdP8oM1QR71JLOlrVHRhjT@dpg-d88pb5u7r5hc73cn5tjg-a.oregon-postgres.render.com/candidateconnect")
+
+# Parse the connection string
+import re
+m = re.match(r"postgresql://([^:]+):([^@]+)@(.+)/(.+)", DB_URL)
+DB_USER, DB_PASSWORD, DB_HOST_PORT, DB_NAME = m.group(1), m.group(2), m.group(3), m.group(4)
+if ":" in DB_HOST_PORT:
+    DB_HOST, DB_PORT = DB_HOST_PORT.split(":")
+else:
+    DB_HOST, DB_PORT = DB_HOST_PORT, "5432"
 
 connection_pool = psycopg2.pool.ThreadedConnectionPool(
     minconn=1,
