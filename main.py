@@ -285,23 +285,22 @@ def login_company(login: CompanyLogin):
     )
     cur = conn.cursor()
     cur.execute("SELECT id, name, email, password_hash FROM companies WHERE email = %s", (login.email,))
-    rows = cur.fetchall()
+    row = cur.fetchone()
     cur.close()
     conn.close()
     
-    if not rows:
+    if not row:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    company = dict(zip(['id', 'name', 'email', 'password_hash'], rows[0]))
-    stored_hash = company['password_hash']
+    company_id, company_name, company_email, stored_hash = row
     input_hash = hashlib.sha256(login.password.encode()).hexdigest()
     
-    if not hmac.compare_digest(input_hash, stored_hash):
+    if input_hash != stored_hash:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": company['email'], "company_id": company['id']},
+        data={"sub": company_email, "company_id": company_id},
         expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
