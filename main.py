@@ -276,13 +276,25 @@ def register_company(company: CompanyRegister):
 
 @app.post("/companies/login")
 def login_company(login: CompanyLogin):
-    res = run_db("SELECT id, name, email, password_hash FROM companies WHERE email = %s", (login.email,))
-    if not res:
+    conn = psycopg2.connect(
+        host="dpg-d88pb5u7r5hc73cn5tjg-a.oregon-postgres.render.com",
+        port="5432",
+        database="candidateconnect",
+        user="candidateconnect_user",
+        password="8IDjea9v12HdP8oM1QR71JLOlrVHRhjT"
+    )
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, email, password_hash FROM companies WHERE email = %s", (login.email,))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    if not rows:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    company = res[0]
+    company = dict(zip(['id', 'name', 'email', 'password_hash'], rows[0]))
     stored_hash = company['password_hash']
-    input_hash = get_password_hash(login.password)
+    input_hash = hashlib.sha256(login.password.encode()).hexdigest()
     
     if not hmac.compare_digest(input_hash, stored_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password")
