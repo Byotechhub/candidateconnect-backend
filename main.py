@@ -272,7 +272,19 @@ def register_company(company: CompanyRegister):
     hashed_password = get_password_hash(company.password)
     run_db("INSERT INTO companies (name, email, password_hash, description, website) VALUES (%s, %s, %s, %s, %s)",
            (company.name, company.email, hashed_password, company.description or '', company.website or ''))
-    return {"message": "Company registered successfully"}
+    
+    # Get the newly created company
+    res = run_db("SELECT id, name, email FROM companies WHERE email = %s", (company.email,))
+    if not res:
+        raise HTTPException(status_code=500, detail="Failed to create company")
+    
+    new_company = res[0]
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": new_company['email'], "company_id": new_company['id']},
+        expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer", "company": {"id": new_company['id'], "name": new_company['name'], "email": new_company['email']}}
 
 @app.post("/companies/login")
 def login_company(login: CompanyLogin):
@@ -303,7 +315,7 @@ def login_company(login: CompanyLogin):
         data={"sub": company_email, "company_id": company_id},
         expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "company": {"id": company_id, "name": company_name, "email": company_email}}
 
 # --- Matching Algorithm ---
 
