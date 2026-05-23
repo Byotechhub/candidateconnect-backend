@@ -4,3 +4,14 @@ services:
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: DB_HOST
+        value: db-dpg-d88pb5u7r5hc73cn5tjg-a
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        value: postgres
+      - key: DB_USER
+        value: postgres
+      - key: DB_PASSWORD
+        value: postgres
