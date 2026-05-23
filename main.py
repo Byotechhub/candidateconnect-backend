@@ -276,22 +276,17 @@ def register_company(company: CompanyRegister):
 
 @app.post("/companies/login")
 def login_company(login: CompanyLogin):
-    try:
-        res = run_db("SELECT id, name, email, password_hash FROM companies WHERE email = %s", (login.email,))
-        if not res:
-            return {"error": "Company not found - email: " + login.email}
-    except Exception as e:
-        return {"error": f"DB Error: {str(e)}"}
-
+    res = run_db("SELECT id, name, email, password_hash FROM companies WHERE email = %s", (login.email,))
+    if not res:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
     company = res[0]
-    pwd_hash = company['password_hash']
+    stored_hash = company['password_hash']
+    input_hash = get_password_hash(login.password)
     
-    try:
-        if not verify_password(login.password, pwd_hash):
-            return {"error": "Invalid password"}
-    except Exception as e:
-        return {"error": f"Verify Error: {str(e)}, hash: {pwd_hash[:20]}..."}
-    
+    if not hmac.compare_digest(input_hash, stored_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": company['email'], "company_id": company['id']},
